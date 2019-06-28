@@ -72,6 +72,7 @@ program main
   do p = 1, niterations
      t1 = omp_get_wtime()  
      ! Jacobi on interior points
+     !$omp target teams distribute parallel do collapse(2)
      do j = 2, N-1
         do i = 2, N-1
            Vnew(i,j)=0.25_double*(hh*f(i,j)+ &
@@ -79,6 +80,7 @@ program main
                 Vold(i,j-1) + Vold(i,j+1))
         enddo
      enddo
+     !$omp end target teams distribute parallel do
      ! Weighted jacobi
      Vnew = (1-omega)*Vold + omega*Vnew
      ! Compute the max norm of the error at each iteration, e = exact-v
