@@ -16,6 +16,8 @@ program main
 
   real(kind=double) :: h, hh
 
+  real(kind=double) :: maxerror
+
   ! Timing variables
   real(kind=8) :: t1, t2, T, mem
 
@@ -70,6 +72,8 @@ program main
   ! ***** Jacobi Iterations *****
   write(*,'(A,T30,A,T40,A)') "Iteration", "Time", "Error"
 
+  !$omp target enter data map(to:Vold,f,exact) map(alloc:Vnew)
+
   do p = 1, niterations
      t1 = omp_get_wtime()  
      ! Jacobi on interior points
@@ -84,14 +88,25 @@ program main
         enddo
      enddo
      !$omp end target teams distribute parallel do
+
+     maxerror=0
      ! Compute the max norm of the error at each iteration, e = exact-v
-     Jerror(p) = maxval(abs(exact-Vnew))
-     Vold = Vnew
+     !$omp target teams distribute parallel do collapse(2) reduction(max:maxerror)
+     do j = 2, N-1
+        do i = 2, N-1
+           maxerror = max(maxerror,abs(exact(i,j)-Vnew(i,j)))
+           Vold(i,j) = Vnew(i,j)
+        enddo
+     enddo
+     !$omp end target teams distribute parallel do
+
+     !$omp target update from(maxerror)
+     Jerror(p) = maxerror
      t2 = omp_get_wtime()
      write(*,'(I4,T30,E8.3,T40,E8.3)') p, t2-t1, Jerror(p)
   enddo
 
-
+  !$omp target exit data map(from:Vnew)
 
   print*, "completed"
 
