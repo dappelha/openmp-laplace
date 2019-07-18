@@ -1,6 +1,7 @@
 program main
 
   use GlobalVariables_mod
+  use cudafor
   !use nvtx_mod
   use omp_lib
 
@@ -78,11 +79,11 @@ program main
            Vnew(i,j)=0.25_double*(hh*f(i,j)+ &
                 Vold(i-1,j) + Vold(i+1,j) +&
                 Vold(i,j-1) + Vold(i,j+1))
+           ! Weighted jacobi
+           Vnew(i,j) = (1-omega)*Vold(i,j) + omega*Vnew(i,j)
         enddo
      enddo
      !$omp end target teams distribute parallel do
-     ! Weighted jacobi
-     Vnew = (1-omega)*Vold + omega*Vnew
      ! Compute the max norm of the error at each iteration, e = exact-v
      Jerror(p) = maxval(abs(exact-Vnew))
      Vold = Vnew
