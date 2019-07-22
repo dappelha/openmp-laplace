@@ -100,7 +100,6 @@ program main
      enddo
      !$omp end target teams distribute parallel do
 
-     !$omp target update from(maxerror)
      Jerror(p) = maxerror
      t2 = omp_get_wtime()
      write(*,'(I4,T30,E8.3,T40,E8.3)') p, t2-t1, Jerror(p)
